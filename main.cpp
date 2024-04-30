@@ -15,6 +15,6 @@ int main(int argc, char* argv[]) {
 			std::endl << "IN OCCURANCE OF ANY ERRORS: ./exit IN TERMINAL" << std::endl;
 	}
 	else
-		IO io(7, 4, 1, 52, 1 + 1 + 4);	
+		IO io(7, 4, 3, 52, 3 + 1 + 4);	
 	return 0;
 }	

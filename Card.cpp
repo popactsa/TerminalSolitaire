@@ -105,6 +105,17 @@ void Card::up_card() {
 	set_visual_parameters(visual.y0, visual.x0);
 	visual.update_pan();
 }
+
+void Card::down_card() {
+	if (status == E_STATUS_STACK_UP)
+		status = E_STATUS_STACK_DOWN;
+	else if (status == E_STATUS_OUT_UP)
+		status = E_STATUS_OUT_DOWN;
+	else if (status == E_STATUS_DECK_UP)
+		status = E_STATUS_DECK_DOWN;
+
+	set_visual_parameters(visual.y0, visual.x0);
+	visual.update_pan();}
 //Card::~Card() {
 //	visual.~Element();
 //}

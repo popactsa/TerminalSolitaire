@@ -26,6 +26,7 @@ class Card {
 		void set_status(E_STATUS _status);
 		bool get_color();
 		void up_card();
+		void down_card();
 		~Card(){};
 };
 

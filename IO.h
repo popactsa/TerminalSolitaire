@@ -19,13 +19,14 @@
 class IO {
 	private:
 		int scrHeight, scrWidth;
-		int current; //
+		int current, current_deck; //
 
 		const int noc; // number of cards used in game
 	       	const int noe; // number of static elements
 		const int n_deck_shown; // number of shown cards from deck
 	        const int n_out; // number of ?domes
 	       	const int n_stacks; // number of stacks(columns)
+		int n_decks; // number of decks(non-const only because of it's formula, required only for initial set)
 
 		std::vector<Element> elements;
 		std::vector<Card> cards;
@@ -33,13 +34,17 @@ class IO {
 		//pointers to cards
 		std::vector<std::vector<Card*>> c_stacks; // cards in each stack
 		std::vector<std::vector<Card*>> c_out; // cards in each ?dome
-		std::vector<Card*> c_deck; // cards in deck;
+		std::vector<std::vector<Card*>> c_deck; // cards in deck;
 		std::vector<Card*> c_reachable; // cards which can be moved
+			//0 - (n_stacks - 1) --- stacks
+			//(n_stacks) - (n_stacks + n_out - 1) --- domes
+			//THE LAST ONE - deck top reachable
 	public:
 		IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe);
 		void get_stack_group(std::vector<Card*> *_group);
 		void update_stack_highest_ptr(int _stack);
 		std::array<int, 3> get_place_in_stack(Card* _card);
+		void swap_deck_top();
 		bool place_held_in_stack(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status);
 		bool move_held(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status);
 		int get_stack_y(int i);
