@@ -12,6 +12,14 @@ E_SUIT Card::get_suit() {
 	return suit;
 }
 
+E_STATUS Card::get_status() {
+	return status;
+}
+
+void Card::set_status(E_STATUS _status) {
+	status = _status;
+}
+
 void Card::set_visual_parameters(int _y0, int _x0) {
 	std::map<int, chtype> suit_symbol{
 		{0, 'h'},
@@ -41,7 +49,7 @@ void Card::set_visual_parameters(int _y0, int _x0) {
 	visual.width = 8;
 	visual.y0 = _y0;
 	visual.x0 = _x0;
-	if (status == E_STATUS_STACK_UP) {
+	if (status == E_STATUS_STACK_UP || status == E_STATUS_DECK_UP || status == E_STATUS_OUT_UP) {
 		visual.ls = ACS_VLINE;
  		visual.rs = ACS_VLINE;
  		visual.bs = ACS_HLINE;
@@ -51,7 +59,7 @@ void Card::set_visual_parameters(int _y0, int _x0) {
  		visual.bl = ACS_LLCORNER;
  		visual.br = ACS_LRCORNER;
 	}
-	else if (status == E_STATUS_STACK_DOWN) {
+	else if (status == E_STATUS_STACK_DOWN || status == E_STATUS_OUT_DOWN || status == E_STATUS_DECK_DOWN) {
 		visual.ls = ACS_CKBOARD;
  		visual.rs = ACS_CKBOARD;
  		visual.bs = ACS_CKBOARD;
@@ -73,11 +81,30 @@ Card& Card::operator = (const Card& _init) {
 }
 
 bool Card::operator == (const Card& _given) {
-	if (suit == _given.suit && value == _given.value && status == _given.status)
+	if (suit == _given.suit && value == _given.value)
 		return true;
+
 	return false;
 }
 
+bool Card::get_color() {
+	if (int(suit) / 2 == 0)
+		return 0; // red
+	else
+		return 1; // black
+}
+
+void Card::up_card() {
+	if (status == E_STATUS_STACK_DOWN)
+		status = E_STATUS_STACK_UP;
+	else if (status == E_STATUS_OUT_DOWN)
+		status = E_STATUS_OUT_UP;
+	else if (status == E_STATUS_DECK_DOWN)
+		status = E_STATUS_DECK_UP;
+
+	set_visual_parameters(visual.y0, visual.x0);
+	visual.update_pan();
+}
 //Card::~Card() {
 //	visual.~Element();
 //}

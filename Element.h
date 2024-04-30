@@ -22,6 +22,7 @@ class Element{
 		void del_pan(bool _to_refresh = false);
 		void update_pan(bool _top_or_bottom = true, bool _to_refresh = true);
 		void move_pan(bool _to_refresh = true);
+		void set_coords(int _y0, int _x0);
 		~Element(){};
 };
 

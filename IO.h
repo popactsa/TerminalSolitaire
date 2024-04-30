@@ -37,10 +37,15 @@ class IO {
 		std::vector<Card*> c_reachable; // cards which can be moved
 	public:
 		IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe);
+		void get_stack_group(std::vector<Card*> *_group);
+		void update_stack_highest_ptr(int _stack);
+		std::array<int, 3> get_place_in_stack(Card* _card);
+		bool place_held_in_stack(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status);
+		bool move_held(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status);
 		int get_stack_y(int i);
 		int get_stack_x(int i);
 		void print_bg(std::string mesg);
-		void clear_bg();
+		void clear_bg(bool _to_refresh = false);
 		void set_init_board();
 		~IO();
 };

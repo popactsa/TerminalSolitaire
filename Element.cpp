@@ -54,6 +54,11 @@ void Element::create_win(bool _to_refresh) {
 	_to_refresh == true ? wrefresh(win) : true ;
 }
 
+void Element::set_coords(int _y0, int _x0) {
+	y0 = _y0;
+	x0 = _x0;
+}
+
 void Element::update_pan(bool _top_or_bottom, bool _to_refresh) {
 	del_panel(pan);
 	create_win();
