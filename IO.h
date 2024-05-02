@@ -19,7 +19,7 @@
 class IO {
 	private:
 		int scrHeight, scrWidth;
-		int current, current_deck; //
+		int current;//
 
 		const int noc; // number of cards used in game
 	       	const int noe; // number of static elements
@@ -45,10 +45,13 @@ class IO {
 		void update_stack_highest_ptr(int _stack);
 		std::array<int, 3> get_place_in_stack(Card* _card);
 		void swap_deck_top();
-		bool place_held_in_stack(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status);
-		bool move_held(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status);
+		bool place_held_in_stack(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status, E_STATUS _to_where);
+		bool check_compatibility(Card* _A, Card* _B);
+		bool move_held(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status, E_STATUS _to_where);
 		int get_stack_y(int i);
 		int get_stack_x(int i);
+		int get_dome_y(int i);
+		int get_dome_x(int i);
 		void print_bg(std::string mesg);
 		void clear_bg(bool _to_refresh = false);
 		void set_init_board();

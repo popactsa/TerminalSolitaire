@@ -1,6 +1,6 @@
 #include "IO.h"
 
-#define debug wprintw(elements[0].win, "debug"); doupdate();
+#define debug 	std::string mesg_debug = "debug"; print_bg(mesg_debug); update_panels(); doupdate();
 
 IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe): n_stacks{_n_stacks}, n_out{_n_out}, n_deck_shown{_n_deck_shown}, noc{_noc}, noe{_noe} {
 	setlocale(LC_ALL, "");
@@ -15,6 +15,7 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe): n_stac
 	cbreak();
 	noecho();
 	start_color();
+	keypad(stdscr, true);
 	raw();
 	refresh();
 
@@ -25,17 +26,20 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe): n_stac
 	getmaxyx(stdscr, scrHeight, scrWidth);
 
 	set_init_board();
-	current = c_reachable.size() - 1;
+	current = 0;
 	char ch;
 	bool is_taken = false;
 	bool mesg_status = false;
 	PANEL* current_pan = c_reachable[current]->visual.get_pan();
 	top_panel(current_pan);
 
+	update_panels();
+	doupdate();
+
 	std::vector<Card*> current_hold;
 	std::array<int, 3> prev_place;
 	
-	while ((ch = getch()) != 'e') {
+	while ((ch = getch())!= 'e') {
 		if (mesg_status) {
 			clear_bg();
 			mesg_status = true;
@@ -86,26 +90,35 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe): n_stac
 			}
 		}
 		else if (ch == 'c') {
-			if (c_reachable[current]->get_status() == E_STATUS_STACK_UP) {
-				get_stack_group(&current_hold);
-				is_taken = true;
+			if (is_taken == false) {
+				if (c_reachable[current]->get_status() == E_STATUS_STACK_UP) {
+					get_stack_group(&current_hold);
+					is_taken = true;
+				}
+				else if (c_reachable[current]->get_status() == E_STATUS_DECK_UP) {
+					current_hold.push_back(c_reachable[current]);
+					is_taken = true;
+				}
+				else if (c_reachable[current]->get_status() == E_STATUS_OUT_UP) {
+					current_hold.push_back(c_reachable[current]);
+					is_taken = true;
+				}
+				std::string mesg = "Cards are taken";
+				print_bg(mesg);
 			}
-			else if (c_reachable[current]->get_status() == E_STATUS_DECK_UP) {
-				current_hold.push_back(c_reachable[current]);
-				is_taken = true;
+			else {
+				std::string mesg = "A pack of cards are taken already";
+				print_bg(mesg);
+				mesg_status = true;
 			}
-			else if (c_reachable[current]->get_status() == E_STATUS_OUT_UP) {
-				current_hold.push_back(c_reachable[current]);
-				is_taken = true;
-			}
-			std::string mesg = "Cards are taken";
-			print_bg(mesg);
 		}
 		else if (ch == 'v') {
-			current_hold.resize(0);
-			clear_bg();
-			mesg_status = false;
-			is_taken = false;
+			if (is_taken == true) {
+				current_hold.resize(0);
+				clear_bg();
+				mesg_status = false;
+				is_taken = false;
+			}
 		}
 		else if (ch == 'w') {
 			if (!is_taken && c_reachable[current]->get_status() == E_STATUS_STACK_UP) {
@@ -149,8 +162,10 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe): n_stac
 		}
 		else if (ch >= '1' && ch <= '7') {
 			if (is_taken) {
-				bool status = move_held(&current_hold, int(ch - '1'), &mesg_status);
+				bool status = move_held(&current_hold, int(ch - '1'), &mesg_status, E_STATUS_STACK_UP);
 				if (status) {
+					clear_bg();
+					mesg_status = false;
 					is_taken = false;
 				}
 			}
@@ -160,6 +175,21 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe): n_stac
 				mesg_status = true;
 			}
 		}
+		else if (ch == 'r') { // automatically tries to find appropriate place
+			if (is_taken) {
+				bool status = move_held(&current_hold, 0, &mesg_status, E_STATUS_OUT_UP); //value of stack = 0 is useless
+				if (status) {
+					clear_bg();
+					mesg_status = false;
+					is_taken = false;
+				}
+			}
+			else {
+				std::string mesg = "Pick up card first";
+				print_bg(mesg);
+				mesg_status = true;
+			}		
+		}
 		update_panels();
 		doupdate();
 	}
@@ -167,7 +197,7 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe): n_stac
 };
 
 void IO::swap_deck_top() {
-	int cr_last = c_reachable.size() - 1; //reserved for deck
+	int cr_last = n_stacks;
 	if (c_deck.empty()) {
 		c_reachable[cr_last] = nullptr;
 	}
@@ -185,24 +215,76 @@ void IO::swap_deck_top() {
 				hide_panel(c_deck[current_deck][i]->visual.get_pan());
 			}
 		}
-		
-		for (int i = 0; i < c_deck[next_deck].size(); ++i) {
-			c_deck[next_deck][i]->up_card();
-			show_panel(c_deck[next_deck][i]->visual.get_pan());
-		}
+	
+		if (c_deck.empty()) {
+			c_reachable[cr_last] = nullptr;
+		}	
+		else {	
+			for (int i = 0; i < c_deck[next_deck].size(); ++i) {
+				c_deck[next_deck][i]->up_card();
+				show_panel(c_deck[next_deck][i]->visual.get_pan());
+			}
 
-		c_reachable[cr_last] = c_deck[next_deck][c_deck[next_deck].size() - 1];
-	}	
+			c_reachable[cr_last] = c_deck[next_deck][c_deck[next_deck].size() - 1];
+		}
+	}
+
+	current = cr_last;
+	PANEL* current_pan = c_reachable[current]->visual.get_pan();
+	top_panel(current_pan);
+
+	std::string mesg = std::to_string(c_deck.size());	
+	print_bg(mesg);
+	update_panels();
+	doupdate();	
 }
 
-bool IO::move_held(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status) {
+bool IO::move_held(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status, E_STATUS _to_where) {
 	std::array<int, 3> prev_place;
 	prev_place = get_place_in_stack(_current_hold[0][0]);
-	if (prev_place[2] == E_STATUS_STACK_UP && prev_place[0] == _stack) {
-		return false;
-	}	
 
-	bool status = place_held_in_stack(_current_hold, _stack, mesg_status);
+	if (_to_where == E_STATUS_OUT_UP) {
+		if (_current_hold->size() != 1) {
+			std::string mesg = "Choose only ONE card";
+			print_bg(mesg);
+			*mesg_status = true;
+			return false;	
+		}
+		else {
+			int i_suit = int(_current_hold[0][0]->get_suit());
+			int i_value = int(_current_hold[0][0]->get_value());
+
+			if (c_out[i_suit].empty()){
+				if (i_value == int(E_VALUE_A)) {
+					_stack = i_suit;
+				}
+				else {
+					std::string mesg = "Can't place it in suit's dome";
+					*mesg_status = true;
+					print_bg(mesg);
+					return false;
+				}
+			}
+			else {
+				if (i_value - int(c_out[i_suit][c_out[i_suit].size() - 1]->get_value()) == 1) {
+					_stack = i_suit;
+				}
+				else {
+					std::string mesg = "Can't place it in suit's dome";
+					*mesg_status = true;
+					print_bg(mesg);
+					return false;
+				}
+			}
+		}
+	}
+	else if (_to_where == E_STATUS_STACK_UP) {
+		if (prev_place[2] == E_STATUS_STACK_UP && prev_place[0] == _stack) {
+			return false;
+		} 
+	}
+
+	bool status = place_held_in_stack(_current_hold, _stack, mesg_status, _to_where);
 
 	if (status == false)
 		return false;
@@ -233,14 +315,9 @@ bool IO::move_held(std::vector<Card*>* _current_hold, int _stack, bool *mesg_sta
 			c_reachable[current] = nullptr;
 		}
 		else {
-			if(prev_place[1] == 0) {
-				c_reachable[current] = nullptr;
-			}
-			else {
-				show_panel(c_out[prev_place[0]][c_out[prev_place[0]].size() - 1]->visual.get_pan());
-				c_out[prev_place[0]][c_out[prev_place[0]].size() - 1]->up_card();
-				c_reachable[current] = c_out[prev_place[0]][c_out[prev_place[0]].size() - 1];
-			}
+			show_panel(c_out[prev_place[0]][c_out[prev_place[0]].size() - 1]->visual.get_pan());
+			c_out[prev_place[0]][c_out[prev_place[0]].size() - 1]->up_card();
+			c_reachable[current] = c_out[prev_place[0]][c_out[prev_place[0]].size() - 1];
 		}
 	}
 	else if (prev_place[2] == int(E_STATUS_DECK_UP)) {
@@ -262,42 +339,95 @@ bool IO::move_held(std::vector<Card*>* _current_hold, int _stack, bool *mesg_sta
         return status;
 }
 
-bool IO::place_held_in_stack(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status) {
-	if (c_stacks[_stack].empty()) {
-		int cnt = 0;
-		int y = get_stack_y(0);
-		int x = get_stack_x(_stack);
- 		for (Card* it : *_current_hold) {
- 			it->visual.set_coords(y + 2 * cnt, x);
-	 		it->visual.move_pan();
- 			c_stacks[_stack].push_back(it);
- 			cnt++;
- 		}
-		c_reachable[_stack] = c_stacks[_stack][c_stacks[_stack].size() - 1];
-		update_stack_highest_ptr(_stack);
+bool IO::place_held_in_stack(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status, E_STATUS _to_where) {
+	if (_to_where == E_STATUS_OUT_UP) {
+		if (c_out[_stack].empty()) {
+			int cnt = 0;
+			int x = get_dome_x(_stack);
+			int y = get_dome_y(_stack);
+	 		for (Card* it : *_current_hold) {
+	 			it->visual.set_coords(y, x);
+		 		it->visual.move_pan();
+				it->set_status(E_STATUS_OUT_UP);
+				c_out[_stack].push_back(it);
+	 			cnt++;
+	 		}
+			c_reachable[n_stacks + 1 + _stack] = c_out[_stack][c_out[_stack].size() - 1];
+			return true;
+		}
+		else {
+			c_out[_stack][c_out[_stack].size() - 1]->down_card();
+			hide_panel(c_out[_stack][c_out[_stack].size() - 1]->visual.get_pan());		
+
+			int x = get_dome_x(_stack);
+			int y = get_dome_y(_stack);
+			int cnt = 1;
+
+			for (Card* it : *_current_hold) {
+				it->visual.set_coords(y, x);
+				it->visual.move_pan();
+				it->set_status(E_STATUS_OUT_UP);	
+				c_out[_stack].push_back(it);
+				cnt++;
+			}
+		
+			c_reachable[n_stacks + 1 + _stack] = c_out[_stack][c_out[_stack].size() - 1];	
+			return true;
+		}	
+	}
+	else if (_to_where == E_STATUS_STACK_UP) {
+		if (c_stacks[_stack].empty()) {
+			int cnt = 0;
+			int y = get_stack_y(0);
+			int x = get_stack_x(_stack);
+	 		for (Card* it : *_current_hold) {
+	 			it->visual.set_coords(y + 2 * cnt, x);
+		 		it->visual.move_pan();
+				it->set_status(E_STATUS_STACK_UP);
+				c_stacks[_stack].push_back(it);
+	 			cnt++;
+	 		}
+			c_reachable[_stack] = c_stacks[_stack][c_stacks[_stack].size() - 1];
+			update_stack_highest_ptr(_stack);
+			return true;
+		}
+		else {
+			if (!check_compatibility(c_stacks[_stack][c_stacks[_stack].size() - 1], _current_hold[0][0])) {
+				std::string mesg = "Can't place it here";
+				print_bg(mesg);
+				*mesg_status = true;
+				return false;
+			}
+		
+			int x = c_stacks[_stack][c_stacks[_stack].size() - 1]->visual.x0;
+			int y = c_stacks[_stack][c_stacks[_stack].size() - 1]->visual.y0;
+			int cnt = 1;
+			for (Card* it : *_current_hold) {
+				it->visual.set_coords(y + 2 * cnt, x);
+				it->visual.move_pan();
+				it->set_status(E_STATUS_STACK_UP);	
+				c_stacks[_stack].push_back(it);
+				cnt++;
+			}
+		
+			update_stack_highest_ptr(_stack);
+			return true;
+		}
+	}
+	else {
+		return false;
+	}
+}
+
+bool IO::check_compatibility(Card* _A, Card* _B) {
+	if (_A->get_color() != _B->get_color() && 
+		( (int(_A->get_value()) - int(_B->get_value()) == 1 && _A->get_value() != E_VALUE_A) ||
+		 (_A->get_value() == E_VALUE_A && _B->get_value() == E_VALUE_K) )
+	   ) {
 		return true;
 	}
 	else {
-		if (c_stacks[_stack][c_stacks[_stack].size() - 1]->get_color() == _current_hold[0][0]->get_color()) {
-			std::string mesg = "Can't place it here";
-			print_bg(mesg);
-			*mesg_status = true;
-			return false;
-		}
-	
-		int x = c_stacks[_stack][c_stacks[_stack].size() - 1]->visual.x0;
-		int y = c_stacks[_stack][c_stacks[_stack].size() - 1]->visual.y0;
-		int cnt = 1;
-		for (Card* it : *_current_hold) {
-			it->visual.set_coords(y + 2 * cnt, x);
-			it->visual.move_pan();
-			it->set_status(E_STATUS_STACK_UP);	
-			c_stacks[_stack].push_back(it);
-			cnt++;
-		}
-	
-		update_stack_highest_ptr(_stack);
-		return true;
+		return false;
 	}
 }
 
@@ -395,6 +525,14 @@ int IO::get_stack_x(int i) {
 	return 2 + 9 * i;
 }
 
+int IO::get_dome_y(int i) {
+	return 1;
+}
+
+int IO::get_dome_x(int i) {
+	return scrWidth * 2/3 + 9 * i;
+}
+
 void IO::set_init_board() {
 	elements.resize(noe);
 
@@ -474,10 +612,6 @@ void IO::set_init_board() {
 		}
 	}
 
-	for (int i = 0; i < n_out; ++i) {
-		c_reachable.push_back(nullptr);
-	}
-
 	c_deck.resize(n_decks);
 	for (int i = 0; i < n_decks; ++i) { //deck
 		bool sw = false;
@@ -521,13 +655,13 @@ void IO::set_init_board() {
 		}
 	}
 
-	current_deck = n_decks - 1;
 	c_reachable.push_back(c_deck[c_deck.size() - 1][c_deck[c_deck.size() - 1].size() - 1]);
 
-	std::string mesg = std::to_string(cards.size());	
-	print_bg(mesg);
-	update_panels();
-	doupdate();
+	c_out.resize(n_out);
+	for (int i = 0; i < n_out; ++i) {
+		c_out[i].resize(0);
+		c_reachable.push_back(nullptr);
+	}
 }
 
 void IO::print_bg(std::string _mesg) {

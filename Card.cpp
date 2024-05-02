@@ -28,19 +28,19 @@ void Card::set_visual_parameters(int _y0, int _x0) {
 		{3, 's'}	
 	};
 	std::map<int, chtype> value_symbol{
-		{0, '2'},
-		{1, '3'},
-		{2, '4'},
-		{3, '5'},
-		{4, '6'},
-		{5, '7'},
-		{6, '8'},
-		{7, '9'},
-		{8, 'T'},
-		{9, 'J'},
-		{10, 'Q'},
-		{11, 'K'},
-		{12, 'A'}
+		{0, 'A'},
+		{1, '2'},
+		{2, '3'},
+		{3, '4'},
+		{4, '5'},
+		{5, '6'},
+		{6, '7'},
+		{7, '8'},
+		{8, '9'},
+		{9, 'T'},
+		{10, 'J'},
+		{11, 'Q'},
+		{12, 'K'}
 	};
 
 	visual.color_scheme = suit == E_SUIT_HEARTS || suit == E_SUIT_DIAMONDS ? 2 : 3;
@@ -92,6 +92,10 @@ bool Card::get_color() {
 		return 0; // red
 	else
 		return 1; // black
+}
+
+E_VALUE Card::get_value() {
+	return value; //
 }
 
 void Card::up_card() {

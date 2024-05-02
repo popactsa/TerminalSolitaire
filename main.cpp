@@ -6,7 +6,8 @@
 
 int main(int argc, char* argv[]) {
 	if (argc > 1) {
-		std::cout << "Keys:	q - swap between columns" << std::endl <<
+		std::cout << "Keys:	q - update deck top" << std::endl <<
+			'\t' << "a/d - move cursor between stacks" << std::endl <<
 			'\t' << "e - exit" << std::endl <<
 			'\t' << "c - grab a card or a stack" << std::endl <<
 		        '\t' << "v - release hand" << std::endl <<
