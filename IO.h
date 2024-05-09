@@ -59,8 +59,8 @@ class IO {
 		void print_bg(std::string mesg);
 		void clear_bg(bool _to_refresh = false);
 		void set_init_board();
-		bool search_in_exist(Card _c, std::vector<Card> _exist);
 		void refresh_visual_order();
+		void print_guide();
 		~IO();
 };
 

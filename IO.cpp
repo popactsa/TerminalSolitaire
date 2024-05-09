@@ -62,6 +62,9 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe): n_stac
 				}
 			}		
 		}
+		else if (ch == 'h') {
+			print_guide();
+		}
 		else if (ch == 'a') {
 			if (mesg_status) {
 				clear_bg();
@@ -104,27 +107,6 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe): n_stac
 			}
 			refresh_visual_order();
 		}
-		else if (ch == 'c') {
-			if (is_taken == false) {
-				take_in_held(&current_hold);
-				is_taken = true;				
-				std::string mesg = "Cards are taken";
-				print_bg(mesg);
-			}
-			else {
-				std::string mesg = "A pack of cards are taken already";
-				print_bg(mesg);
-				mesg_status = true;
-			}
-		}
-		else if (ch == 'v') {
-			if (is_taken == true) {
-				current_hold.resize(0);
-				clear_bg();
-				mesg_status = false;
-				is_taken = false;
-			}
-		}
 		else if (ch == 'w') {
 			if (!is_taken && c_reachable[current]->get_status() == E_STATUS_STACK_UP) {
 				Card* next;
@@ -165,13 +147,15 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe): n_stac
 			}
 		}
 		else if (ch >= '1' && ch <= '7') {
+			take_in_held(&current_hold);
+			is_taken = true;
 			if (is_taken) {
 				bool status = move_held(&current_hold, int(ch - '1'), &mesg_status, E_STATUS_STACK_UP);
 				if (status) {
 					clear_bg();
 					mesg_status = false;
-					is_taken = false;
 				}
+				is_taken = false;
 			}
 			else {
 				std::string mesg = "Pick up card first";
@@ -180,13 +164,15 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe): n_stac
 			}
 		}
 		else if (ch == 'r') { // automatically tries to find appropriate place
+			take_in_held(&current_hold);
+			is_taken = true;
 			if (is_taken) {
 				bool status = move_held(&current_hold, 0, &mesg_status, E_STATUS_OUT_UP); //value of stack = 0 is useless
 				if (status) {
 					clear_bg();
-					mesg_status = false;
-					is_taken = false;
+					mesg_status = false;	
 				}
+				is_taken = false;
 			}
 			else {
 				std::string mesg = "Pick up card first";
@@ -741,10 +727,12 @@ void IO::set_init_board() {
 					temp_status = E_STATUS_STACK_DOWN;
 					Card temp(temp_status, E_SUIT(seed % 4), E_VALUE(seed % 13), get_stack_y(j), get_stack_x(i));
 					for (int i = 0; i < initialized_cards; ++i) {
-						if (temp == cards[initialized_cards])
+						if (temp == cards[i]) {
+							fout << initialized_cards << " " << i << std::endl;
 							is_dublicate = true;
+							break;
+						}
 					}
-					is_dublicate = search_in_exist(temp, cards);
 					if (temp.get_color() == color) {
 						is_dublicate = true;
 						continue;	
@@ -791,6 +779,11 @@ void IO::refresh_visual_order() {
 	top_panel(pan);
 }
 
+void IO::print_guide() {
+	std::string mesg = "q - swap deck; 1-7 - place in stack, r - place in dome, w/s - move in stack";
+	print_bg(mesg);
+}
+
 void IO::print_bg(std::string _mesg) {
 	if (elements.empty())
 		std::cerr << "No background initialized" << std::endl;
@@ -802,7 +795,7 @@ void IO::print_bg(std::string _mesg) {
 void IO::clear_bg(bool _to_refresh) {
 	if (elements.empty())
 		std::cerr << "No background initialized" << std::endl;
-	std::string mesg(35, ' ');
+	std::string mesg(scrWidth * 2/3, ' ');
 	const char* chmesg = mesg.c_str();
 	mvwprintw(elements[0].win, scrHeight - 4, scrWidth - mesg.size() - 2, chmesg);
 
@@ -816,15 +809,6 @@ void IO::clear_bg(bool _to_refresh) {
 		update_panels();
 		doupdate();
 	}
-}
-
-bool IO::search_in_exist(Card _c, std::vector<Card> _exist) {
-	for (Card it : _exist) {
-		if (_c == it) {
-			return true;
-		}
-	}		
-	return false;
 }
 
 IO::~IO() {
