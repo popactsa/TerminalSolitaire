@@ -48,6 +48,7 @@ class IO {
 		void swap_deck_top();
 		bool place_held_in_stack(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status, E_STATUS _to_where);
 		bool check_compatibility(Card* _A, Card* _B);
+		void take_in_held(std::vector<Card*>* _current_hold);
 		bool move_held(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status, E_STATUS _to_where);
 		int get_stack_y(int i);
 		int get_stack_x(int i);

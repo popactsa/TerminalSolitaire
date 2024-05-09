@@ -96,7 +96,7 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe): n_stac
 			else {
 				bool is_nullptr = true;
 				while (is_nullptr == true) {
-					current = current < c_reachable.size() ? current + 1 : 0;
+					current = current < c_reachable.size() - 1 ? current + 1 : 0;
 					is_nullptr = c_reachable[current] == nullptr ? true : false;
 				}
 				current_pan = c_reachable[current]->visual.get_pan();
@@ -106,18 +106,8 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe): n_stac
 		}
 		else if (ch == 'c') {
 			if (is_taken == false) {
-				if (c_reachable[current]->get_status() == E_STATUS_STACK_UP) {
-					get_stack_group(&current_hold);
-					is_taken = true;
-				}
-				else if (c_reachable[current]->get_status() == E_STATUS_DECK_UP) {
-					current_hold.push_back(c_reachable[current]);
-					is_taken = true;
-				}
-				else if (c_reachable[current]->get_status() == E_STATUS_OUT_UP) {
-					current_hold.push_back(c_reachable[current]);
-					is_taken = true;
-				}
+				take_in_held(&current_hold);
+				is_taken = true;				
 				std::string mesg = "Cards are taken";
 				print_bg(mesg);
 			}
@@ -220,6 +210,19 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe): n_stac
 	}
 	endwin();
 };
+
+void IO::take_in_held(std::vector<Card*>* _current_hold) {
+	_current_hold->resize(0);
+	if (c_reachable[current]->get_status() == E_STATUS_STACK_UP) {
+		get_stack_group(_current_hold);
+	}
+	else if (c_reachable[current]->get_status() == E_STATUS_DECK_UP) {
+		_current_hold->push_back(c_reachable[current]);
+	}
+	else if (c_reachable[current]->get_status() == E_STATUS_OUT_UP) {
+		_current_hold->push_back(c_reachable[current]);
+	}
+}
 
 void IO::swap_deck_top() {
 	int cr_last = n_stacks;
