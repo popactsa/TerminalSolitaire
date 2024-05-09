@@ -8,6 +8,11 @@ Card::Card(E_STATUS _status, E_SUIT _suit, E_VALUE _value, int _y0, int _x0) {
 	set_visual_parameters(_y0, _x0);
 }
 
+Card::Card(E_SUIT _suit, E_VALUE _value) {
+	value = _value;
+	suit = _suit;
+}
+
 E_SUIT Card::get_suit() {
 	return suit;
 }
@@ -45,8 +50,8 @@ void Card::set_visual_parameters(int _y0, int _x0) {
 
 	visual.color_scheme = suit == E_SUIT_HEARTS || suit == E_SUIT_DIAMONDS ? 2 : 3;
 	//set basic card window parameters
-	visual.height = 8;
-	visual.width = 8;
+	visual.height = 6;
+	visual.width = 6;
 	visual.y0 = _y0;
 	visual.x0 = _x0;
 	if (status == E_STATUS_STACK_UP || status == E_STATUS_DECK_UP || status == E_STATUS_OUT_UP) {
@@ -83,7 +88,6 @@ Card& Card::operator = (const Card& _init) {
 bool Card::operator == (const Card& _given) {
 	if (suit == _given.suit && value == _given.value)
 		return true;
-
 	return false;
 }
 

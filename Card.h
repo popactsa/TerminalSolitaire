@@ -18,6 +18,7 @@ class Card {
 
 		Card(){};
 		Card(E_STATUS _status, E_SUIT _suit, E_VALUE _value, int _y0 = 1, int _x0 = 1);
+		Card(E_SUIT _suit, E_VALUE _value);
 		void set_visual_parameters(int _y0 = 1, int _x0 = 1);
 		Card& operator = (const Card& _init);
 		bool operator == (const Card& _given);

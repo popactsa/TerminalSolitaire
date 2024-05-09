@@ -11,6 +11,7 @@
 #include <ctime>
 #include <array>
 #include <cstdlib>
+#include <fstream>
 #include "Element.h"
 #include "Card.h"
 
@@ -52,9 +53,13 @@ class IO {
 		int get_stack_x(int i);
 		int get_dome_y(int i);
 		int get_dome_x(int i);
+		int get_deck_y(int i);
+		int get_deck_x(int i);
 		void print_bg(std::string mesg);
 		void clear_bg(bool _to_refresh = false);
 		void set_init_board();
+		bool search_in_exist(Card _c, std::vector<Card> _exist);
+		void refresh_visual_order();
 		~IO();
 };
 
