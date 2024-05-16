@@ -259,7 +259,7 @@ void IO::swap_deck_top() {
 	PANEL* current_pan = c_reachable[current]->visual.get_pan();
 	top_panel(current_pan);
 
-	std::string mesg = std::to_string(c_deck.size());	
+	std::string mesg = std::to_string(next_deck);	
 	print_bg(mesg);
 	update_panels();
 	doupdate();	
@@ -351,25 +351,33 @@ bool IO::move_held(std::vector<Card*>* _current_hold, int _stack, bool *mesg_sta
 			c_reachable[current] = nullptr;
 		}
 		else {
-			if (prev_place[1] == 0) {
-				c_deck.erase(c_deck.begin() + prev_place[0]);
-				if (c_deck.empty()) {
-					c_reachable[current] = nullptr;
+			std::ofstream fout("debug_log");
+			for (int i = prev_place[0]; i > 0; --i) {
+				c_deck[i].insert(c_deck[i].begin(), c_deck[i-1][c_deck[i-1].size() - 1]);
+				if (i == prev_place[0]) {
+					c_deck[i][0]->up_card();
 				}
-				else {
-					c_reachable[current] = c_deck[0][c_deck[0].size() - 1];
-					swap_deck_top();
+
+				for (int j = c_deck[i-1].size() - 1; j > 0; --j) {
+					c_deck[i-1][j] = c_deck[i-1][j - 1];
 				}
+				fout << c_deck[i].size() << std::endl;
+				c_deck[i-1].erase(c_deck[i-1].begin());
+			}
+			fout << c_deck[0].size() << std::endl;
+			fout.close();
+			if (c_deck[0].empty()) {
+				c_deck.erase(c_deck.begin());
+				c_reachable[current] = c_deck[prev_place[0] - 1][c_deck[prev_place[0] -1].size() - 1];
 			}
 			else {
-				for (int i = 0; i < c_deck[prev_place[0]].size(); ++i) {
-					int delta_x = get_deck_x(0) - get_deck_x(1);
-					int y0 = c_deck[prev_place[0]][i]->visual.y0;
-					int x0 = c_deck[prev_place[0]][i]->visual.x0 - delta_x;
-					c_deck[prev_place[0]][i]->visual.set_coords(y0, x0);
-					c_deck[prev_place[0]][i]->visual.move_pan();	
-				}	
-				c_reachable[current] = c_deck[prev_place[0]][prev_place[1] - 1];		
+				c_reachable[current] = c_deck[prev_place[0]][c_deck[prev_place[0]].size() - 1];
+			}
+			for (int i = 0; i < c_deck.size(); ++i) {
+				for (int j = 0; j < c_deck[i].size(); ++j) {
+					c_deck[i][j]->visual.set_coords(get_deck_y(j), get_deck_x(j));
+					c_deck[i][j]->visual.move_pan(true);
+				}
 			}
 		}
 	}

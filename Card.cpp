@@ -112,6 +112,8 @@ void Card::up_card() {
 
 	set_visual_parameters(visual.y0, visual.x0);
 	visual.update_pan();
+	show_panel(visual.get_pan());
+	top_panel(visual.get_pan());
 }
 
 void Card::down_card() {
