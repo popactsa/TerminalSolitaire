@@ -362,7 +362,14 @@ bool IO::move_held(std::vector<Card*>* _current_hold, int _stack, bool *mesg_sta
 				}
 			}
 			else {
-				c_reachable[current] = c_deck[prev_place[0]][prev_place[1] - 1];
+				for (int i = 0; i < c_deck[prev_place[0]].size(); ++i) {
+					int delta_x = get_deck_x(0) - get_deck_x(1);
+					int y0 = c_deck[prev_place[0]][i]->visual.y0;
+					int x0 = c_deck[prev_place[0]][i]->visual.x0 - delta_x;
+					c_deck[prev_place[0]][i]->visual.set_coords(y0, x0);
+					c_deck[prev_place[0]][i]->visual.move_pan();	
+				}	
+				c_reachable[current] = c_deck[prev_place[0]][prev_place[1] - 1];		
 			}
 		}
 	}
@@ -420,11 +427,17 @@ bool IO::place_held_in_stack(std::vector<Card*>* _current_hold, int _stack, bool
 	}
 	else if (_to_where == E_STATUS_STACK_UP) {
 		if (c_stacks[_stack].empty()) {
+			if (_current_hold[0][0]->get_value() != E_VALUE_K) {
+				std::string mesg = "Can't place it here";
+				print_bg(mesg);
+				*mesg_status = true;
+				return false;	
+			}
 			int cnt = 0;
 			int y = get_stack_y(0);
 			int x = get_stack_x(_stack);
 	 		for (Card* it : *_current_hold) {
-	 			it->visual.set_coords(y + 2 * cnt, x);
+	 			it->visual.set_coords(y + 1 * cnt, x);
 		 		it->visual.move_pan();
 				it->set_status(E_STATUS_STACK_UP);
 				c_stacks[_stack].push_back(it);
@@ -445,7 +458,7 @@ bool IO::place_held_in_stack(std::vector<Card*>* _current_hold, int _stack, bool
 			int y = c_stacks[_stack][c_stacks[_stack].size() - 1]->visual.y0;
 			int cnt = 1;
 			for (Card* it : *_current_hold) {
-				it->visual.set_coords(y + 2 * cnt, x);
+				it->visual.set_coords(y + 1 * cnt, x);
 				it->visual.move_pan();
 				it->set_status(E_STATUS_STACK_UP);	
 				c_stacks[_stack].push_back(it);
@@ -463,8 +476,7 @@ bool IO::place_held_in_stack(std::vector<Card*>* _current_hold, int _stack, bool
 
 bool IO::check_compatibility(Card* _A, Card* _B) {
 	if (_A->get_color() != _B->get_color() && 
-		( (int(_A->get_value()) - int(_B->get_value()) == 1 && _A->get_value() != E_VALUE_A) ||
-		 (_A->get_value() == E_VALUE_A && _B->get_value() == E_VALUE_K) )
+		( (int(_A->get_value()) - int(_B->get_value()) == 1) )
 	   ) {
 		return true;
 	}
@@ -563,7 +575,7 @@ void IO::get_stack_group(std::vector<Card*> *_group) {
 }
 
 int IO::get_stack_y(int i) {
-	int res = scrHeight / 5 + 1*i;
+	int res = scrHeight / 4 + 1*i;
 	if (res < scrHeight - 6)
 		return res;
 	else
@@ -614,8 +626,6 @@ void IO::set_init_board() {
 		cnt++;
 	}
 
-	cards.resize(noc);
-
 	int noc_in_stacks = n_stacks * (n_stacks + 1) / 2;
 
 	int chosen_red, chosen_black;
@@ -630,133 +640,182 @@ void IO::set_init_board() {
 	}
 
 	std::ofstream fout("debug_log");
-	std::vector<Card> chosen;
-	for (int i = 0; i < n_stacks + n_decks * n_deck_shown; ++i) {
-		if (i < 13) {
-			Card temp(E_SUIT(chosen_red), E_VALUE(i % 13));
-			chosen.push_back(temp);
-		}
-		else if (i >= 13 && i < 26) {
-			Card temp(E_SUIT(chosen_black), E_VALUE(i % 13));
-			chosen.push_back(temp);
-		}
-		else {
-			int seed = std::rand();
-			Card temp(E_SUIT(seed % 4), E_VALUE(seed % 13));
-			bool is_dublicate = false;
-			for (int j = 0; j < i; ++j) {
-				if (chosen[i] == temp)
-					is_dublicate = true;
-			}	
-			
-			if (is_dublicate) {
-				--i;
-			}
-			else {
+
+	int exit_counter = 0;
+	int initialized_cards = 0;
+	bool retry_status = true;
+	while (exit_counter < 10 && retry_status) {
+		retry_status = false;
+		std::vector<Card> chosen;
+		for (int i = 0; i < n_stacks + n_decks * n_deck_shown; ++i) {
+			if (i < 13) {
+				Card temp(E_SUIT(chosen_red), E_VALUE(i % 13));
 				chosen.push_back(temp);
 			}
-		}
-	}
-	std::string mesg1 = std::to_string(chosen.size());
-	print_bg(mesg1);
-	
-	int initialized_cards = 0;
-	c_stacks.resize(n_stacks);
-	c_deck.resize(n_decks);
-	for (int i = 0; i < n_stacks; ++i) {
-		int seed = std::rand() % chosen.size();
-		cards[initialized_cards] = chosen[seed];
-		c_stacks[i].resize(i + 1);
-		c_stacks[i][i] = &cards[initialized_cards];
-		initialized_cards++;
-		chosen.erase(chosen.begin() + seed);
-	}
-
-	for (int i = 0; i < n_decks * n_deck_shown; ++i) {
-		int seed = std::rand() % chosen.size();
-		cards[initialized_cards] = chosen[seed];
-		if (i / n_deck_shown == n_decks - 1) {
-			cards[initialized_cards].set_status(E_STATUS_DECK_UP);
-		}
-		else {
-			cards[initialized_cards].set_status(E_STATUS_DECK_DOWN);	
-		}
-
-		cards[initialized_cards].set_visual_parameters(get_deck_y(i % n_deck_shown), get_deck_x(i % n_deck_shown));
-
-		if (i % n_deck_shown == 0) {
-			c_deck[i / n_deck_shown].resize(n_deck_shown);
-		}
-		c_deck[i / n_deck_shown][i % n_deck_shown] = &cards[initialized_cards];
-		PANEL* pan = cards[initialized_cards].visual.get_pan(); 
-	
-		if (i / n_deck_shown == n_decks - 1) {
-			top_panel(pan);
-		}
-		else {
-			hide_panel(pan);
-		}
-		initialized_cards++;
-		chosen.erase(chosen.begin() + seed);
-	}
-
-	for (int i = 0; i < n_stacks; ++i) { //stacks
-		bool is_highest = false;
-		bool color; // 0 - red, 1 - black
-		for (int j = i; j >= 0; --j) {
-			bool is_dublicate = true;
-			if (j == i)
-				is_highest = true;
-			else
-				is_highest = false;
-		 	while (is_dublicate) {
+			else if (i >= 13 && i < 26) {
+				Card temp(E_SUIT(chosen_black), E_VALUE(i % 13));
+				chosen.push_back(temp);
+			}
+			else {
 				int seed = std::rand();
-				is_dublicate = false;
-				E_STATUS temp_status;
-
-				if (is_highest) { //already initialized
-					temp_status = E_STATUS_STACK_UP;
-					c_stacks[i][j]->set_status(temp_status);
-					c_stacks[i][j]->set_visual_parameters(get_stack_y(j), get_stack_x(i));
-					color = c_stacks[i][j]->get_color();
-					c_reachable.push_back(c_stacks[i][j]);
-					PANEL* pan = c_stacks[i][j]->visual.get_pan();
-					top_panel(pan);
+				Card temp(E_SUIT(seed % 4), E_VALUE(seed % 13));
+				bool is_dublicate = false;
+				for (int j = 0; j < i; ++j) {
+					if (chosen[j] == temp)
+						is_dublicate = true;
+				}	
+				
+				if (is_dublicate) {
+					--i;
 				}
 				else {
-					temp_status = E_STATUS_STACK_DOWN;
-					Card temp(temp_status, E_SUIT(seed % 4), E_VALUE(seed % 13), get_stack_y(j), get_stack_x(i));
-					for (int i = 0; i < initialized_cards; ++i) {
-						if (temp == cards[i]) {
-							fout << initialized_cards << " " << i << std::endl;
-							is_dublicate = true;
-							break;
-						}
-					}
-					if (temp.get_color() == color) {
-						is_dublicate = true;
-						continue;	
-					}	
-					if (!is_dublicate) {
-						color = color == 0 ? 1 : 0;
-						cards[initialized_cards] = temp;
-						c_stacks[i][j] = &cards[initialized_cards];
-						PANEL* pan = c_stacks[i][j]->visual.get_pan();
-						top_panel(pan);
-						initialized_cards++;
-					}
+					chosen.push_back(temp);
 				}
 			}
-		}
-	}	
+		}		
+		c_stacks.resize(n_stacks);
+		c_deck.resize(n_decks);
+		cards.resize(noc);
 
-	c_reachable.push_back(c_deck[c_deck.size() - 1][c_deck[c_deck.size() - 1].size() - 1]);
+		for (int i = 0; i < n_stacks; ++i) {
+			int seed = std::rand() % chosen.size();
+			cards[initialized_cards] = chosen[seed];
+			c_stacks[i].resize(i + 1);
+			c_stacks[i][i] = &cards[initialized_cards];
+			initialized_cards++;
+			c_reachable.push_back(c_stacks[i][i]);
+			chosen.erase(chosen.begin() + seed);
+		}
+	
+		for (int i = 0; i < n_decks * n_deck_shown; ++i) {
+			int seed = std::rand() % chosen.size();
+			cards[initialized_cards] = chosen[seed];
+			if (i / n_deck_shown == n_decks - 1) {
+				cards[initialized_cards].set_status(E_STATUS_DECK_UP);
+			}
+			else {
+				cards[initialized_cards].set_status(E_STATUS_DECK_DOWN);	
+			}
+	
+			cards[initialized_cards].set_visual_parameters(get_deck_y(i % n_deck_shown), get_deck_x(i % n_deck_shown));
+	
+			if (i % n_deck_shown == 0) {
+				c_deck[i / n_deck_shown].resize(n_deck_shown);
+			}
+			c_deck[i / n_deck_shown][i % n_deck_shown] = &cards[initialized_cards];
+			//PANEL* pan = cards[initialized_cards].visual.get_pan(); 
+		
+	//		if (i / n_deck_shown == n_decks - 1) {
+	//			top_panel(pan);
+	//		}
+	//		else {
+	//			hide_panel(pan);
+	//		}
+			initialized_cards++;
+			chosen.erase(chosen.begin() + seed);
+		}
+		c_reachable.push_back(c_deck[c_deck.size() - 1][c_deck[c_deck.size() - 1].size() - 1]);
+
+		int counter = 0;
+		for (int i = 0; i < n_stacks; ++i) { //stacks
+			bool is_highest = false;
+			bool color; // 0 - red, 1 - black
+			for (int j = i; j >= 0; --j) {
+				bool is_dublicate = true;
+				if (j == i)
+					is_highest = true;
+				else
+					is_highest = false;
+				counter = 0;
+			 	while (is_dublicate) {
+					if (counter > 200) {
+						exit_counter++;
+						retry_status = true;
+						break;
+					}
+					int seed = std::rand();
+					is_dublicate = false;
+					E_STATUS temp_status;
+	
+					if (is_highest) { //already initialized
+						temp_status = E_STATUS_STACK_UP;
+						c_stacks[i][j]->set_status(temp_status);
+						c_stacks[i][j]->set_visual_parameters(get_stack_y(j), get_stack_x(i));
+						color = c_stacks[i][j]->get_color();
+						//PANEL* pan = c_stacks[i][j]->visual.get_pan();
+						//top_panel(pan);
+					}
+					else {
+						temp_status = E_STATUS_STACK_DOWN;
+						Card temp(temp_status, E_SUIT(seed % 4), E_VALUE(seed % 13), get_stack_y(j), get_stack_x(i));
+						debug
+						for (int k = 0; k < initialized_cards; ++k) {
+							if (temp == cards[k]) {
+							//	fout << initialized_cards << " " << k << std::endl;
+								is_dublicate = true;
+								break;
+							}
+						}
+						if (temp.get_color() == color) {
+							is_dublicate = true;
+							continue;	
+						}	
+						if (!is_dublicate) {
+							color = color == 0 ? 1 : 0;
+							cards[initialized_cards] = temp;
+							c_stacks[i][j] = &cards[initialized_cards];
+							//PANEL* pan = c_stacks[i][j]->visual.get_pan();
+							//top_panel(pan);
+							initialized_cards++;
+							break;
+						}
+						counter++;
+					}
+				}
+				if (retry_status) {
+					break;
+				}
+			}
+			if (retry_status) {
+				initialized_cards = 0;
+				c_stacks.clear();
+				c_deck.clear();
+				cards.clear();
+				c_reachable.clear();
+				break;
+			}
+		}
+	}
+	if (retry_status) {
+		endwin();
+		exit(-1);
+	}
+	else {
+		for (int i = 0; i < n_deck_shown; ++i) {
+			PANEL* pan = c_deck[c_deck.size() - 1][i]->visual.get_pan();
+			top_panel(pan);
+		}
+		for (int i = 0; i < n_stacks; ++i) {
+			for (int j = i; j >= 0; --j) {
+				PANEL* pan = c_stacks[i][j]->visual.get_pan();
+				top_panel(pan);
+			}
+		}
+	}
 
 	c_out.resize(n_out);
 	for (int i = 0; i < n_out; ++i) {
 		c_out[i].resize(0);
 		c_reachable.push_back(nullptr);
 	}
+	std::array<int, 4> counts = {0, 0, 0, 0};
+	for (int i = 0; i < initialized_cards; ++i) {
+		counts[cards[i].get_suit()]++;
+		fout << i << " " << cards[i].get_suit() << " " << cards[i].get_value() << std::endl;
+	}
+	fout << std::endl << initialized_cards << std::endl;
+	fout << counts[0] << " " << counts[1] << " " << counts[2] << " " << counts[3] << std::endl;
+	fout.close();
 }
 
 void IO::refresh_visual_order() {

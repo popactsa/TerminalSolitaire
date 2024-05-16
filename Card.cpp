@@ -123,7 +123,8 @@ void Card::down_card() {
 		status = E_STATUS_DECK_DOWN;
 
 	set_visual_parameters(visual.y0, visual.x0);
-	visual.update_pan();}
-//Card::~Card() {
-//	visual.~Element();
-//}
+	visual.update_pan();
+}
+Card::~Card() {
+	visual.~Element();
+}

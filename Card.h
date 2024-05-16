@@ -29,7 +29,7 @@ class Card {
 		bool get_color();
 		void up_card();
 		void down_card();
-		~Card(){};
+		~Card();
 };
 
 #endif

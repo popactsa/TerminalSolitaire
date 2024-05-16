@@ -60,16 +60,18 @@ void Element::set_coords(int _y0, int _x0) {
 }
 
 void Element::update_pan(bool _top_or_bottom, bool _to_refresh) {
-	del_panel(pan);
-	create_win();
-	pan = new_panel(win);
-	if (_top_or_bottom == true)
-		top_panel(pan);
-	else
-		bottom_panel(pan);
-	if (_to_refresh == true) {
-		update_panels();
-		doupdate();
+	if (pan != nullptr) {
+		del_panel(pan);
+		create_win();
+		pan = new_panel(win);
+		if (_top_or_bottom == true)
+			top_panel(pan);
+		else
+			bottom_panel(pan);
+		if (_to_refresh == true) {
+			update_panels();
+			doupdate();
+		}
 	}
 }
 
@@ -81,7 +83,7 @@ void Element::move_pan(bool _to_refresh) {
 	}	
 }
 
-//Element::~Element() {
-//	del_panel(pan);
-//	delwin(win);
-//}
+Element::~Element() {
+	//del_panel(pan);
+	//delwin(win);
+}
