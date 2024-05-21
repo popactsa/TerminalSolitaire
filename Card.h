@@ -2,6 +2,7 @@
 #define CARD_H
 
 #include <map>
+#include <vector>
 #include "Element.h"
 
 enum E_SUIT {E_SUIT_HEARTS, E_SUIT_DIAMONDS, E_SUIT_CLUBS, E_SUIT_SPADES};
@@ -29,6 +30,8 @@ class Card {
 		bool get_color();
 		void up_card();
 		void down_card();
+		bool is_up();
+		int find_card_in_vector(std::vector<Card*> _vec);
 		~Card();
 };
 

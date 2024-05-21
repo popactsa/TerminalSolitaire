@@ -20,7 +20,8 @@
 class IO {
 	private:
 		int scrHeight, scrWidth;
-		int current;//
+		int current;
+		int action;
 
 		const int noc; // number of cards used in game
 	       	const int noe; // number of static elements
@@ -31,6 +32,8 @@ class IO {
 
 		std::vector<Element> elements;
 		std::vector<Card> cards;
+		std::fstream log;
+		const std::string log_name;
 
 		//pointers to cards
 		std::vector<std::vector<Card*>> c_stacks; // cards in each stack
@@ -40,14 +43,17 @@ class IO {
 			//0 - (n_stacks - 1) --- stacks
 			//(n_stacks) - (n_stacks + n_out - 1) --- domes
 			//THE LAST ONE - deck top reachable
-	public:
-		IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe);
+	public: //
+		IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe, const std::string _log_name = "game_log");
 		void get_stack_group(std::vector<Card*> *_group);
 		void update_stack_highest_ptr(int _stack);
 		std::array<int, 3> get_place_in_stack(Card* _card);
 		void swap_deck_top();
+		bool is_correct_open(std::fstream *_f, const std::string _name);
 		bool place_held_in_stack(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status, E_STATUS _to_where);
 		bool check_compatibility(Card* _A, Card* _B);
+		void save_state();
+		bool return_state();
 		void take_in_held(std::vector<Card*>* _current_hold);
 		bool move_held(std::vector<Card*>* _current_hold, int _stack, bool *mesg_status, E_STATUS _to_where);
 		int get_stack_y(int i);

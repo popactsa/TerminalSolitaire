@@ -50,8 +50,8 @@ void Card::set_visual_parameters(int _y0, int _x0) {
 
 	visual.color_scheme = suit == E_SUIT_HEARTS || suit == E_SUIT_DIAMONDS ? 2 : 3;
 	//set basic card window parameters
-	visual.height = 6;
-	visual.width = 6;
+	visual.height = 7;
+	visual.width = 7;
 	visual.y0 = _y0;
 	visual.x0 = _x0;
 	if (status == E_STATUS_STACK_UP || status == E_STATUS_DECK_UP || status == E_STATUS_OUT_UP) {
@@ -116,6 +116,14 @@ void Card::up_card() {
 	top_panel(visual.get_pan());
 }
 
+int Card::find_card_in_vector(std::vector<Card*> _vec) {
+	for (int i = 0; i < _vec.size(); ++i) {
+		if (this == _vec[i])
+			return i;
+	}
+	return -1; //not found	
+}
+
 void Card::down_card() {
 	if (status == E_STATUS_STACK_UP)
 		status = E_STATUS_STACK_DOWN;
@@ -127,6 +135,14 @@ void Card::down_card() {
 	set_visual_parameters(visual.y0, visual.x0);
 	visual.update_pan();
 }
+
+bool Card::is_up() {
+	if (status == E_STATUS_STACK_UP || status == E_STATUS_DECK_UP || status == E_STATUS_OUT_UP)
+		return true;
+	else
+		return false;
+}
+
 Card::~Card() {
 	visual.~Element();
 }

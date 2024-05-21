@@ -5,7 +5,7 @@
 
 
 int main(int argc, char* argv[]) {
-	if (argc > 1) {
+	if (argc > 2) {
 		std::cout << "Keys:	q - update deck top" << std::endl <<
 			'\t' << "a/d - move cursor between stacks" << std::endl <<
 			'\t' << "e - exit" << std::endl <<
@@ -15,7 +15,15 @@ int main(int argc, char* argv[]) {
 			'\t' << "w/s - move in stack" << std::endl <<
 			std::endl << "IN OCCURANCE OF ANY ERRORS: ./exit IN TERMINAL" << std::endl;
 	}
-	else
-		IO io(7, 4, 4, 52, 3 + 1 + 4);	
+	else {
+		initscr();
+		cbreak();
+		noecho();
+		start_color();
+		keypad(stdscr, true);
+		raw();
+		refresh();
+		IO io(7, 4, 1, 52, 3 + 1 + 4);
+	}	
 	return 0;
 }	
