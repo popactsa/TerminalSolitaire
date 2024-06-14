@@ -83,7 +83,32 @@ void Element::move_pan(bool _to_refresh) {
 	}	
 }
 
+void Element::write_in_middle(std::string _mesg) {
+	const char* chmesg = _mesg.c_str();
+	mvwprintw(win, (height - 1) / 2, (width - _mesg.size()) / 2, chmesg);
+}
+
+void Element::write_item_value(const int _value) {
+	std::string _mesg = std::to_string(_value);
+	const char* chmesg = _mesg.c_str();
+	mvwprintw(win, (height - 1) / 2, width - _mesg.size() - 2, chmesg);
+	wrefresh(win);
+}
+
+void Element::write_item_value(const bool _value) {
+	std::string _mesg = _value ? " true" : "false";
+	const char* chmesg = _mesg.c_str();
+	mvwprintw(win, (height - 1) / 2, width - _mesg.size() - 2, chmesg);
+	wrefresh(win);
+}
+
+void Element::set_color_scheme(int i) {
+	color_scheme = i;
+	wbkgd(win, COLOR_PAIR(color_scheme));
+	wrefresh(win);
+}
+
 Element::~Element() {
-	//del_panel(pan);
-	//delwin(win);
+//	del_panel(pan);
+//	delwin(win);
 }

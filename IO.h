@@ -29,11 +29,16 @@ class IO {
 	        const int n_out; // number of ?domes
 	       	const int n_stacks; // number of stacks(columns)
 		int n_decks; // number of decks(non-const only because of it's formula, required only for initial set)
+		bool take_backs = true;
 
 		std::vector<Element> elements;
 		std::vector<Card> cards;
+
 		std::fstream log;
 		const std::string log_name;
+		
+		std::fstream leaderboard;
+		const std::string lb_name;
 
 		//pointers to cards
 		std::vector<std::vector<Card*>> c_stacks; // cards in each stack
@@ -44,7 +49,7 @@ class IO {
 			//(n_stacks) - (n_stacks + n_out - 1) --- domes
 			//THE LAST ONE - deck top reachable
 	public: //
-		IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe, const std::string _log_name = "game_log");
+		IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe, bool _take_backs,  const std::string _log_name = "1game_log", const std::string _lb_name = "leaderboard");
 		void get_stack_group(std::vector<Card*> *_group);
 		void update_stack_highest_ptr(int _stack);
 		std::array<int, 3> get_place_in_stack(Card* _card);

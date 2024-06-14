@@ -1,95 +1,39 @@
-==31610== Memcheck, a memory error detector
-==31610== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
-==31610== Using Valgrind-3.14.0 and LibVEX; rerun with -h for copyright info
-==31610== Command: ./mai
-==31610== 
-==31610== Invalid read of size 1
-==31610==    at 0x40363B0: strchrnul (vg_replace_strmem.c:1394)
-==31610==    by 0x5309DCC: __find_specmb (printf-parse.h:108)
-==31610==    by 0x5309DCC: vfprintf (vfprintf.c:1312)
-==31610==    by 0x53B9CF5: __vsnprintf_chk (vsnprintf_chk.c:63)
-==31610==    by 0x4063243: ??? (in /lib/x86_64-linux-gnu/libncurses.so.6.1)
-==31610==    by 0x405D80F: vwprintw (in /lib/x86_64-linux-gnu/libncurses.so.6.1)
-==31610==    by 0x405DB64: mvwprintw (in /lib/x86_64-linux-gnu/libncurses.so.6.1)
-==31610==    by 0x110188: IO::set_init_board() (in /home/iashatilov/ts/mai)
-==31610==    by 0x10B30D: IO::IO(int, int, int, int, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (in /home/iashatilov/ts/mai)
-==31610==    by 0x11AC8B: main (in /home/iashatilov/ts/mai)
-==31610==  Address 0x589dd91 is 0 bytes after a block of size 1 alloc'd
-==31610==    at 0x402EDEF: operator new(unsigned long) (vg_replace_malloc.c:334)
-==31610==    by 0x1100D3: IO::set_init_board() (in /home/iashatilov/ts/mai)
-==31610==    by 0x10B30D: IO::IO(int, int, int, int, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (in /home/iashatilov/ts/mai)
-==31610==    by 0x11AC8B: main (in /home/iashatilov/ts/mai)
-==31610== 
-==31610== Invalid read of size 1
-==31610==    at 0x5309FF7: vfprintf (vfprintf.c:1324)
-==31610==    by 0x53B9CF5: __vsnprintf_chk (vsnprintf_chk.c:63)
-==31610==    by 0x4063243: ??? (in /lib/x86_64-linux-gnu/libncurses.so.6.1)
-==31610==    by 0x405D80F: vwprintw (in /lib/x86_64-linux-gnu/libncurses.so.6.1)
-==31610==    by 0x405DB64: mvwprintw (in /lib/x86_64-linux-gnu/libncurses.so.6.1)
-==31610==    by 0x110188: IO::set_init_board() (in /home/iashatilov/ts/mai)
-==31610==    by 0x10B30D: IO::IO(int, int, int, int, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (in /home/iashatilov/ts/mai)
-==31610==    by 0x11AC8B: main (in /home/iashatilov/ts/mai)
-==31610==  Address 0x589dd91 is 0 bytes after a block of size 1 alloc'd
-==31610==    at 0x402EDEF: operator new(unsigned long) (vg_replace_malloc.c:334)
-==31610==    by 0x1100D3: IO::set_init_board() (in /home/iashatilov/ts/mai)
-==31610==    by 0x10B30D: IO::IO(int, int, int, int, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (in /home/iashatilov/ts/mai)
-==31610==    by 0x11AC8B: main (in /home/iashatilov/ts/mai)
-==31610== 
-==31610== Mismatched free() / delete / delete []
-==31610==    at 0x403058B: operator delete[](void*) (vg_replace_malloc.c:641)
-==31610==    by 0x1101A1: IO::set_init_board() (in /home/iashatilov/ts/mai)
-==31610==    by 0x10B30D: IO::IO(int, int, int, int, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (in /home/iashatilov/ts/mai)
-==31610==    by 0x11AC8B: main (in /home/iashatilov/ts/mai)
-==31610==  Address 0x589dd90 is 0 bytes inside a block of size 1 alloc'd
-==31610==    at 0x402EDEF: operator new(unsigned long) (vg_replace_malloc.c:334)
-==31610==    by 0x1100D3: IO::set_init_board() (in /home/iashatilov/ts/mai)
-==31610==    by 0x10B30D: IO::IO(int, int, int, int, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (in /home/iashatilov/ts/mai)
-==31610==    by 0x11AC8B: main (in /home/iashatilov/ts/mai)
-==31610== 
-==31610== Conditional jump or move depends on uninitialised value(s)
-==31610==    at 0x10C6AF: IO::return_state() (in /home/iashatilov/ts/mai)
-==31610==    by 0x10C01C: IO::IO(int, int, int, int, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (in /home/iashatilov/ts/mai)
-==31610==    by 0x11AC8B: main (in /home/iashatilov/ts/mai)
-==31610== 
-==31610== Conditional jump or move depends on uninitialised value(s)
-==31610==    at 0x10C6C5: IO::return_state() (in /home/iashatilov/ts/mai)
-==31610==    by 0x10C01C: IO::IO(int, int, int, int, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (in /home/iashatilov/ts/mai)
-==31610==    by 0x11AC8B: main (in /home/iashatilov/ts/mai)
-==31610== 
-==31610== Invalid read of size 8
-==31610==    at 0x11828E: Element::get_pan() (in /home/iashatilov/ts/mai)
-==31610==    by 0x111374: IO::refresh_visual_order() (in /home/iashatilov/ts/mai)
-==31610==    by 0x10CDAC: IO::return_state() (in /home/iashatilov/ts/mai)
-==31610==    by 0x10C01C: IO::IO(int, int, int, int, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (in /home/iashatilov/ts/mai)
-==31610==    by 0x11AC8B: main (in /home/iashatilov/ts/mai)
-==31610==  Address 0x50 is not stack'd, malloc'd or (recently) free'd
-==31610== 
-==31610== 
-==31610== Process terminating with default action of signal 11 (SIGSEGV)
-==31610==  Access not within mapped region at address 0x50
-==31610==    at 0x11828E: Element::get_pan() (in /home/iashatilov/ts/mai)
-==31610==    by 0x111374: IO::refresh_visual_order() (in /home/iashatilov/ts/mai)
-==31610==    by 0x10CDAC: IO::return_state() (in /home/iashatilov/ts/mai)
-==31610==    by 0x10C01C: IO::IO(int, int, int, int, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (in /home/iashatilov/ts/mai)
-==31610==    by 0x11AC8B: main (in /home/iashatilov/ts/mai)
-==31610==  If you believe this happened as a result of a stack
-==31610==  overflow in your program's main thread (unlikely but
-==31610==  possible), you can try to increase the size of the
-==31610==  main thread stack using the --main-stacksize= flag.
-==31610==  The main thread stack size used in this run was 8388608.
-==31610== 
-==31610== HEAP SUMMARY:
-==31610==     in use at exit: 166,913 bytes in 1,078 blocks
-==31610==   total heap usage: 25,537 allocs, 24,459 frees, 1,256,998 bytes allocated
-==31610== 
-==31610== LEAK SUMMARY:
-==31610==    definitely lost: 0 bytes in 0 blocks
-==31610==    indirectly lost: 0 bytes in 0 blocks
-==31610==      possibly lost: 0 bytes in 0 blocks
-==31610==    still reachable: 166,913 bytes in 1,078 blocks
-==31610==         suppressed: 0 bytes in 0 blocks
-==31610== Rerun with --leak-check=full to see details of leaked memory
-==31610== 
-==31610== For counts of detected and suppressed errors, rerun with: -v
-==31610== Use --track-origins=yes to see where uninitialised values come from
-==31610== ERROR SUMMARY: 3038 errors from 6 contexts (suppressed: 0 from 0)
+==27582== Memcheck, a memory error detector
+==27582== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==27582== Using Valgrind-3.14.0 and LibVEX; rerun with -h for copyright info
+==27582== Command: ./main
+==27582== 
+==27582== Invalid read of size 8
+==27582==    at 0x10EB27: IO::swap_deck_top() (in /home/iashatilov/ts/main)
+==27582==    by 0x10FAA3: IO::move_held(std::vector<Card*, std::allocator<Card*> >*, int, bool*, E_STATUS) (in /home/iashatilov/ts/main)
+==27582==    by 0x10C186: IO::IO(int, int, int, int, int, bool, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (in /home/iashatilov/ts/main)
+==27582==    by 0x11E625: main (in /home/iashatilov/ts/main)
+==27582==  Address 0xfffffffffffffff8 is not stack'd, malloc'd or (recently) free'd
+==27582== 
+==27582== 
+==27582== Process terminating with default action of signal 11 (SIGSEGV)
+==27582==  Access not within mapped region at address 0xFFFFFFFFFFFFFFF8
+==27582==    at 0x10EB27: IO::swap_deck_top() (in /home/iashatilov/ts/main)
+==27582==    by 0x10FAA3: IO::move_held(std::vector<Card*, std::allocator<Card*> >*, int, bool*, E_STATUS) (in /home/iashatilov/ts/main)
+==27582==    by 0x10C186: IO::IO(int, int, int, int, int, bool, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (in /home/iashatilov/ts/main)
+==27582==    by 0x11E625: main (in /home/iashatilov/ts/main)
+==27582==  If you believe this happened as a result of a stack
+==27582==  overflow in your program's main thread (unlikely but
+==27582==  possible), you can try to increase the size of the
+==27582==  main thread stack using the --main-stacksize= flag.
+==27582==  The main thread stack size used in this run was 8388608.
+==27582== 
+==27582== HEAP SUMMARY:
+==27582==     in use at exit: 320,315 bytes in 3,504 blocks
+==27582==   total heap usage: 32,172 allocs, 28,668 frees, 2,364,834 bytes allocated
+==27582== 
+==27582== LEAK SUMMARY:
+==27582==    definitely lost: 736 bytes in 23 blocks
+==27582==    indirectly lost: 0 bytes in 0 blocks
+==27582==      possibly lost: 0 bytes in 0 blocks
+==27582==    still reachable: 319,579 bytes in 3,481 blocks
+==27582==         suppressed: 0 bytes in 0 blocks
+==27582== Rerun with --leak-check=full to see details of leaked memory
+==27582== 
+==27582== For counts of detected and suppressed errors, rerun with: -v
+==27582== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

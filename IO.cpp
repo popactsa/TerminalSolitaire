@@ -2,7 +2,7 @@
 
 #define debug 	std::string mesg_debug = "debug"; print_bg(mesg_debug); update_panels(); doupdate();
 
-IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe, const std::string _log_name): n_stacks{_n_stacks}, n_out{_n_out}, n_deck_shown{_n_deck_shown}, noc{_noc}, noe{_noe}, log_name{_log_name}
+IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe, bool _take_backs, const std::string _log_name, const std::string _lb_name): n_stacks{_n_stacks}, n_out{_n_out}, n_deck_shown{_n_deck_shown}, noc{_noc}, noe{_noe}, log_name{_log_name}, take_backs{_take_backs}, lb_name{_lb_name}
 {
 	setlocale(LC_ALL, "");
 	std::srand(std::time(nullptr));
@@ -12,10 +12,6 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe, const s
 //		--n_decks;
 //	}
 
-	init_pair(1, COLOR_CYAN, COLOR_BLACK);
-	init_pair(2, COLOR_RED, COLOR_BLACK);
-	init_pair(3, COLOR_YELLOW, COLOR_BLACK);
-	init_pair(4, COLOR_CYAN, COLOR_BLACK);
 	getmaxyx(stdscr, scrHeight, scrWidth);
 
 	set_init_board();
@@ -39,16 +35,16 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe, const s
 	is_correct_open(&log,log_name);	
 	
 	action = 0;
-	bool is_changed;
+	bool is_changed = false;
 	while ((ch = getch())!= 'p') {
+		if (is_changed) {
+			action++;
+		}
 		if (action == 0) {
 			save_state();
 			action++;
 		}
 		is_changed = false;
-		if (is_game_won) {
-			break;
-		}
 		if (mesg_status) {
 			clear_bg();
 			mesg_status = true;
@@ -58,12 +54,14 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe, const s
 				current = n_stacks;
 				top_panel(c_reachable[current]->visual.get_pan());
 				refresh_visual_order();
-				is_changed = true;
+				if (!c_deck.empty()) {
+					std::string mesg = std::to_string(c_deck.size());
+					print_bg(mesg);
+				}
 			}
 			else {
-				if (!is_taken) {
-					swap_deck_top();
-				}
+				is_changed = true;
+				swap_deck_top();
 			}		
 		}
 		else if (ch == 'h') {
@@ -172,28 +170,42 @@ IO::IO(int _n_stacks, int _n_out, int _n_deck_shown, int _noc, int _noe, const s
 				mesg_status = true;
 			}		
 		}
-		else if (ch == 'z') {
+		else if (ch == 'z' && take_backs) {
 			return_state();
-			save_state();
 		}
 
+		is_game_won = true;
 		for (int i = 0; i < n_out; ++i) {
-			if (c_out[i].size() != 12) {
+			if (c_out[i].size() != 13) {
 				is_game_won = false;
 				break;
 			}
 		}
 		if (is_game_won) {
-			top_panel(elements[0].get_pan());
-			std::string mesg("You won");
-			print_bg(mesg);
-		}
+			break;
+		}	
 		if (is_changed) {
 			save_state();
-			action++;
 		}
 		update_panels();
 		doupdate();
+	}
+	if (is_game_won) {
+		for (int i = 0; i < noc; ++i) {
+			del_panel(cards[i].visual.get_pan());
+			delwin(cards[i].visual.get_win());	
+		}
+		for (int i = 1; i < elements.size(); ++i) {
+			del_panel(elements[i].get_pan());
+			delwin(elements[i].get_win());
+		}
+		std::string mesg = "You won in ";
+		mesg += std::to_string(action);
+		mesg += " moves";
+		elements[0].write_in_middle(mesg);
+		update_panels();
+		doupdate();
+		char c = getch();
 	}
 	log.close();
 	endwin();
@@ -214,9 +226,8 @@ bool IO::is_correct_open(std::fstream *_f, const std::string _name) {
 }
 
 bool IO::return_state() {
-	if (action <= 1)
+	if (action < 1)
 		return false;
-	action--;
 	std::string line;
 	log.seekg(0, std::ios::beg);
 	std::vector<std::string> before_log;
@@ -228,6 +239,7 @@ bool IO::return_state() {
 			break;
 		before_log.push_back(line);
 	}
+	--action;
 
 	const std::string deb = "deb";
 	std::fstream fout(deb, std::ios::out);
@@ -251,17 +263,23 @@ bool IO::return_state() {
 		// 4 - status
 		// 5 - place in c_reachable
 		std::string state;
-		for (std::string::iterator it = line.begin(); cnt < 6; ++it) {
-			if (*it == ' ' || *it == '\n') {
+		for (int i = 0; i < line.size(); ++i) {
+			if (line[i] == ' ' || line[i] == '\n') {
 				card_state[cnt] = std::stoi(temp);
-				state += std::to_string(card_state[cnt]) + ' ';
+				state.append(std::to_string(card_state[cnt]));
+				state.append(" ");
 				cnt++;
-				temp = "";
+				temp.clear();
 			}
 			else {
-				temp += *it;
+				temp.append(1u, line[i]);
 			}
-		}
+		}	
+		card_state[cnt] = std::stoi(temp);
+		state.append(std::to_string(card_state[cnt]));
+		state.append(" ");
+		cnt++;
+		temp.clear();//why does it work so??????????	
 
 		Card* c = &cards[card_state[0]];
 		c->set_status(E_STATUS(card_state[4]));
@@ -269,100 +287,104 @@ bool IO::return_state() {
 			if (c_deck[card_state[1]].size() - 1 < card_state[2] || c_deck[card_state[1]].empty()) {
 				c_deck[card_state[1]].resize(card_state[2] + 1, nullptr);
 			}
-	//		c_deck[card_state[1]].resize(30, nullptr);
 			c->set_visual_parameters(get_deck_y(card_state[2]), get_deck_x(card_state[2]));
 			c_deck[card_state[1]][card_state[2]] = c;
 			if (c->is_up()) {
 				show_panel(c->visual.get_pan());
 				top_panel(c->visual.get_pan());
 			}
-
+			else {
+				hide_panel(c->visual.get_pan());
+			}
 		}
 		else if (card_state[3] == int(E_STATUS_OUT_UP)) {
 			if (c_out[card_state[1]].size() - 1 < card_state[2] || c_out[card_state[1]].empty()) {
 				c_out[card_state[1]].resize(card_state[2] + 1, nullptr);
 			}
-	//		c_out[card_state[1]].resize(10, nullptr);
 			c->set_visual_parameters(get_dome_y(card_state[1]), get_dome_x(card_state[1]));
 			c_out[card_state[1]][card_state[2]] = c;
 			if (c->is_up()) {
 				show_panel(c->visual.get_pan());
 				top_panel(c->visual.get_pan());
 			}
+			else {
+				hide_panel(c->visual.get_pan());
+			}
 		}
 		else if (card_state[3] == int(E_STATUS_STACK_UP)) {
 			if (c_stacks[card_state[1]].size() - 1 < card_state[2] || c_stacks[card_state[1]].empty()) {
 				c_stacks[card_state[1]].resize(card_state[2] + 1, nullptr);
 			}
-	//		c_stacks[card_state[1]].resize(10, nullptr);
 			c->set_visual_parameters(get_stack_y(card_state[2]), get_stack_x(card_state[1]));
 			if (c->is_up()) {
 				show_panel(c->visual.get_pan());
 			}	
 			c_stacks[card_state[1]][card_state[2]] = c;
 		}
-		c->visual.move_pan();
+
 		if (card_state[5] != -1) {
-			if (c_reachable.size() - 1 < card_state[5]) {
-				c_reachable.resize(card_state[5] + 1);
-			}
 			c_reachable[card_state[5]] = c;
 			current = card_state[5];
 		}
-		//change current	
 		c->visual.update_pan();	
 		fout << state << std::endl;	
 	}
 	
 	fout << "c_stacks size is " << c_stacks.size() << std::endl;
 	for (int i = 0; i < n_stacks; ++i) {
-		if (c_stacks[i].empty())
+		if (c_stacks[i].empty()) {
+			c_reachable[i] = nullptr;
+			fout << '\t' << i << " : " << "EMPTY" << std::endl;	
 			continue;
+		}
 		for (int j = c_stacks[i].size() - 1; j >= 0; --j) {
 			if (c_stacks[i][j] == nullptr)
 				c_stacks[i].erase(c_stacks[i].begin() + j);
 		}
-		if (c_stacks[i].empty())
-			c_reachable[i] = nullptr;
-		fout << std::endl << '\t' << i << " : " << c_stacks[i].size() << std::endl;
+		fout << '\t' << i << " : " << c_stacks[i].size() << std::endl;
 	}
 
 	fout << "c_out size is " << c_out.size() << std::endl;
 	for (int i = 0; i < n_out; ++i) {
-		if (c_out[i].empty())
+		if (c_out[i].empty()) {
+			c_reachable[n_stacks + 1 + i] = nullptr;
+			fout << '\t' << i << " : " << "EMPTY" << std::endl;	
 			continue;
+		}
 		for (int j = c_out[i].size() - 1; j >= 0; --j) {
 			if (c_out[i][j] == nullptr)
 				c_out[i].erase(c_out[i].begin() + j);
 		}
-		if (c_out[i].empty())
-			c_reachable[n_stacks + 1 + i] = nullptr;
 		fout << '\t' << i << " : " << c_out[i].size() << std::endl;
 	}
 
-	fout << "c_deck size is " << c_deck.size() << std::endl;
-	for (int i = 0; i < n_decks; ++i) {
-		if (c_deck[i].empty())
-			continue;
-		for (int j = c_deck[i].size() - 1; j >= 0; --j) {
-			if (c_deck[i][j] == nullptr)
-				c_deck[i].erase(c_deck[i].begin() + j);
-		}
-		fout << '\t' << i << " : " << c_deck[i].size() << std::endl;
-	}	      
+	if (!c_deck.empty()) {
+		fout << "c_deck size is " << c_deck.size() << std::endl;
+		for (int i = n_decks - 1; i >= 0; --i) {
+			if (c_deck[i].empty()) {
+				c_deck.erase(c_deck.begin() + i);
+				fout << '\t' << i << " : " << "DELETED" << std::endl;
+				continue;
+			}
+			for (int j = c_deck[i].size() - 1; j >= 0; --j) {
+				if (c_deck[i][j] == nullptr)
+					c_deck[i].erase(c_deck[i].begin() + j);
+			}
+			fout << '\t' << i << " : " << c_deck[i].size() << std::endl;
+		}	      
+	}
+	else {
+		fout << "c_deck IS EMPTY" << std::endl;
+	}
 	fout << "c_reachable size is " << c_reachable.size() << std::endl;
 
-	for (int i = 0; i < c_reachable.size(); ++i) {
+	for (int i = c_reachable.size() - 1; i >= 0; --i) {
 		if (c_reachable[i] != nullptr) {
 			current = i;
-			break;
+			show_panel(c_reachable[i]->visual.get_pan());
 		}
 	}
-	for (int i = 0; i < c_reachable.size(); ++i) {
-		if (c_reachable[i] != nullptr) {
-			top_panel(c_reachable[i]->visual.get_pan());
-		}
-	}
+	top_panel(c_reachable[current]->visual.get_pan());	
 	refresh_visual_order();
 	fout.close();
 	log.close();
@@ -548,20 +570,25 @@ bool IO::move_held(std::vector<Card*>* _current_hold, int _stack, bool *mesg_sta
 			c_reachable[current] = nullptr;
 		}
 		else {
-			for (int i = prev_place[0]; i > 0; --i) {
-				c_deck[i].insert(c_deck[i].begin(), c_deck[i-1][c_deck[i-1].size() - 1]);
-				if (i == prev_place[0]) {
-					c_deck[i][0]->up_card();
-				}
+			if (prev_place[0] != 0) {
+				for (int i = prev_place[0]; i > 0; --i) {
+					c_deck[i].insert(c_deck[i].begin(), c_deck[i-1][c_deck[i-1].size() - 1]);
+					if (i == prev_place[0]) {
+						c_deck[i][0]->up_card();
+					}
 
-				for (int j = c_deck[i-1].size() - 1; j > 0; --j) {
-					c_deck[i-1][j] = c_deck[i-1][j - 1];
+					for (int j = c_deck[i-1].size() - 1; j > 0; --j) {
+						c_deck[i-1][j] = c_deck[i-1][j - 1];
+					}
+					c_deck[i-1].erase(c_deck[i-1].begin());
 				}
-				c_deck[i-1].erase(c_deck[i-1].begin());
 			}
 			if (c_deck[0].empty()) {
 				c_deck.erase(c_deck.begin());
-				if (prev_place[0] > 0) {
+				if (c_deck.empty()) {
+					c_reachable[current] = nullptr;
+				}
+				else if (prev_place[0] > 0) {
 					c_reachable[current] = c_deck[prev_place[0] - 1][c_deck[prev_place[0] -1].size() - 1];
 				}
 				else {
@@ -681,8 +708,8 @@ bool IO::place_held_in_stack(std::vector<Card*>* _current_hold, int _stack, bool
 }
 
 bool IO::check_compatibility(Card* _A, Card* _B) {
-	if (_A->get_color() != _B->get_color()/* && 
-		( (int(_A->get_value()) - int(_B->get_value()) == 1) )*/
+	if (_A->get_color() != _B->get_color() && 
+		( (int(_A->get_value()) - int(_B->get_value()) == 1) )
 	   ) {
 		return true;
 	}
@@ -833,10 +860,10 @@ void IO::set_init_board() {
 	}
 
 	for (int i = 0; i < n_stacks; ++i) {
-		char number = static_cast<const char>(i) + '1';
-		const char* number_array = new char(number);
+		char number = i + '1';
+		std::string number_str = {number};
+		const char* number_array = number_str.c_str();
 		mvwprintw(elements[0].win, get_stack_y(0) - 1, get_stack_x(i) + (get_stack_x(1) - get_stack_x(0)) / 2 - 1, number_array);
-		delete[] number_array;	
 	}
 
 	int noc_in_stacks = n_stacks * (n_stacks + 1) / 2;
@@ -859,15 +886,15 @@ void IO::set_init_board() {
 	bool retry_status = true;
 	while (exit_counter < 20 && retry_status) {
 		retry_status = false;
-		std::vector<Card> chosen;
+		std::vector<Card> chosen(n_stacks + n_decks * n_deck_shown);
 		for (int i = 0; i < n_stacks + n_decks * n_deck_shown; ++i) {
 			if (i < 13) {
 				Card temp(E_SUIT(chosen_red), E_VALUE(i % 13));
-				chosen.push_back(temp);
+				chosen[i] = temp;
 			}
 			else if (i >= 13 && i < 26) {
 				Card temp(E_SUIT(chosen_black), E_VALUE(i % 13));
-				chosen.push_back(temp);
+				chosen[i] = temp;
 			}
 			else {
 				int seed = std::rand();
@@ -882,7 +909,7 @@ void IO::set_init_board() {
 					--i;
 				}
 				else {
-					chosen.push_back(temp);
+					chosen[i] = temp;
 				}
 			}
 		}		
@@ -899,7 +926,7 @@ void IO::set_init_board() {
 			c_reachable.push_back(c_stacks[i][i]);
 			chosen.erase(chosen.begin() + seed);
 		}
-	
+
 		for (int i = 0; i < n_decks * n_deck_shown; ++i) {
 			int seed = std::rand() % chosen.size();
 			cards[initialized_cards] = chosen[seed];
@@ -916,14 +943,14 @@ void IO::set_init_board() {
 				c_deck[i / n_deck_shown].resize(n_deck_shown);
 			}
 			c_deck[i / n_deck_shown][i % n_deck_shown] = &cards[initialized_cards];
-			//PANEL* pan = cards[initialized_cards].visual.get_pan(); 
+			PANEL* pan = cards[initialized_cards].visual.get_pan(); 
 		
-	//		if (i / n_deck_shown == n_decks - 1) {
-	//			top_panel(pan);
-	//		}
-	//		else {
-	//			hide_panel(pan);
-	//		}
+			if (i / n_deck_shown == n_decks - 1) {
+				top_panel(pan);
+			}
+			else {
+				hide_panel(pan);
+			}
 			initialized_cards++;
 			chosen.erase(chosen.begin() + seed);
 		}
@@ -999,20 +1026,14 @@ void IO::set_init_board() {
 			}
 		}
 	}
-	if (retry_status) {
-		endwin();
-		exit(-1);
-	}
-	else {
-		for (int i = 0; i < n_deck_shown; ++i) {
+	for (int i = 0; i < n_deck_shown; ++i) {
 			PANEL* pan = c_deck[c_deck.size() - 1][i]->visual.get_pan();
 			top_panel(pan);
-		}
-		for (int i = 0; i < n_stacks; ++i) {
-			for (int j = i; j >= 0; --j) {
-				PANEL* pan = c_stacks[i][j]->visual.get_pan();
-				top_panel(pan);
-			}
+	}		
+	for (int i = 0; i < n_stacks; ++i) {
+		for (int j = i; j >= 0; --j) {
+			PANEL* pan = c_stacks[i][j]->visual.get_pan();
+			top_panel(pan);
 		}
 	}
 
@@ -1022,6 +1043,7 @@ void IO::set_init_board() {
 		c_reachable.push_back(nullptr);
 	}
 	std::array<int, 4> counts = {0, 0, 0, 0};
+	fout << exit_counter << std::endl;
 	for (int i = 0; i < initialized_cards; ++i) {
 		counts[cards[i].get_suit()]++;
 		fout << i << " " << cards[i].get_suit() << " " << cards[i].get_value() << std::endl;
@@ -1054,8 +1076,21 @@ void IO::refresh_visual_order() {
 }
 
 void IO::print_guide() {
-	std::string mesg = "q - swap deck; 1-7 - place in stack, r - place in dome, w/s - move in stack";
-	print_bg(mesg);
+	std::string mesg1 = "q - swap deck; 1-7 - place in stack";
+	std::string mesg2 = "r - place in dome; w/s - moving in stack";
+	std::string mesg3 = "z - take turn back; p - exit to terminal";
+	clear_bg();
+	const char* chmesg1 = mesg1.c_str();
+	//mvwprintw(elements[0].win, scrHeight - 4, scrWidth - _mesg.size() - 2, chmesg);
+	mvwprintw(elements[0].win, 4, get_deck_x(n_deck_shown - 1) + (get_deck_x(1) - get_deck_x(0)) + 2, chmesg1);
+
+	const char* chmesg2 = mesg2.c_str();
+	//mvwprintw(elements[0].win, scrHeight - 4, scrWidth - _mesg.size() - 2, chmesg);
+	mvwprintw(elements[0].win, 5, get_deck_x(n_deck_shown - 1) + (get_deck_x(1) - get_deck_x(0)) + 2, chmesg2);
+
+	const char* chmesg3 = mesg3.c_str();
+	//mvwprintw(elements[0].win, scrHeight - 4, scrWidth - _mesg.size() - 2, chmesg);
+	mvwprintw(elements[0].win, 6, get_deck_x(n_deck_shown - 1) + (get_deck_x(1) - get_deck_x(0)) + 2, chmesg3);
 }
 
 void IO::print_bg(std::string _mesg) {
@@ -1064,17 +1099,19 @@ void IO::print_bg(std::string _mesg) {
 	const char* chmesg = _mesg.c_str();
 	clear_bg();
 	//mvwprintw(elements[0].win, scrHeight - 4, scrWidth - _mesg.size() - 2, chmesg);
-	mvwprintw(elements[0].win, 4, get_dome_x(0) - _mesg.size() - 2, chmesg);
+	mvwprintw(elements[0].win, 4, get_deck_x(n_deck_shown - 1) + (get_deck_x(1) - get_deck_x(0)) + 2, chmesg);
 }
 
 void IO::clear_bg(bool _to_refresh) {
 	if (elements.empty())
 		std::cerr << "No background initialized" << std::endl;
-	std::string mesg(35, ' ');
+	std::string mesg(get_dome_x(0) - get_deck_x(0) - 2, ' ');
 	const char* chmesg = mesg.c_str();
 	//mvwprintw(elements[0].win, scrHeight - 4, scrWidth - mesg.size() - 2, chmesg);
-	mvwprintw(elements[0].win, 4, get_dome_x(0) - mesg.size() - 2, chmesg);
-//	werase(elements[0].get_win());
+	mvwprintw(elements[0].win, 4, get_deck_x(n_deck_shown - 1) + (get_deck_x(1) - get_deck_x(0)) + 2, chmesg);
+	mvwprintw(elements[0].win, 5, get_deck_x(n_deck_shown - 1)  + (get_deck_x(1) - get_deck_x(0)) + 2, chmesg);
+	mvwprintw(elements[0].win, 6, get_deck_x(n_deck_shown - 1) + (get_deck_x(1) - get_deck_x(0)) + 2, chmesg); //
+	//	werase(elements[0].get_win());
 //	elements[0].create_win();
 //	elements[0].del_pan();
 //	elements[0].get_pan();
